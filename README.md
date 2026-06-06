@@ -2,11 +2,6 @@
 ## Désactivation du SSL Pinning avec Objection + Burp Suite
 
 <p align="center">
-  <img src="screenshots/androgoat_interface.png" width="220"/>
-  <img src="screenshots/objection_spawn_sslpinning_disable.png" width="430"/>
-</p>
-
-<p align="center">
   <b>Frida · Objection · Burp Suite · Android Emulator · SSL Pinning Bypass · AndroGoat</b>
 </p>
 
@@ -15,25 +10,33 @@
   <img src="https://img.shields.io/badge/Proxy-Burp%20Suite-orange?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Instrumentation-Frida-blue?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/Tool-Objection-purple?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Target-AndroGoat-black?style=for-the-badge"/>
+</p>
+
+<p align="center">
+  <b>Objectif :</b> intercepter le trafic HTTPS d’une application Android après désactivation dynamique du SSL Pinning.
 </p>
 
 ---
 
 ## 📌 Objectif du lab
 
-Ce laboratoire a pour objectif de mettre en place une inspection HTTPS sur une application Android en utilisant un proxy d’interception, puis de désactiver dynamiquement le **SSL Pinning** avec **Objection**, une surcouche basée sur Frida.
+Ce laboratoire consiste à mettre en place une chaîne complète d’inspection HTTPS sur Android avec **Burp Suite**, puis à désactiver dynamiquement le **SSL Pinning** d’une application cible avec **Objection**, basé sur **Frida**.
 
-L’objectif principal est de démontrer que le trafic HTTPS d’une application Android peut être observé dans **Burp Suite** après injection de hooks SSL/TLS dans l’application cible.
+L’objectif principal est de démontrer que le trafic HTTPS d’une application Android peut être observé dans Burp Suite après injection de hooks SSL/TLS dans l’application.
 
 ---
 
 ## ⚠️ Cadre éthique
 
-Ce lab a été réalisé uniquement dans un environnement contrôlé, sur un émulateur Android et avec une application volontairement vulnérable destinée à l’apprentissage.
+Ce lab a été réalisé uniquement dans un environnement contrôlé :
 
-L’application utilisée est **AndroGoat**, une application Android éducative contenant plusieurs vulnérabilités de sécurité.
+- Émulateur Android personnel ;
+- Application volontairement vulnérable ;
+- Proxy local Burp Suite ;
+- Aucune cible réelle ou non autorisée.
 
-Aucune application réelle, service externe privé ou cible non autorisée n’a été testé.
+L’application utilisée est **AndroGoat**, une application Android éducative conçue pour l’apprentissage de la sécurité mobile.
 
 ---
 
@@ -93,22 +96,46 @@ LAB16_SSLPinning_Objection/
 │   └── journal_lab16.txt
 │
 └── screenshots/
-    ├── python_pip_adb-versions.png
-    ├── frida_objection_pip-versions.png
     ├── adb_devices.png
-    ├── android_cpu_architecture.png
+    ├── adb_monkey.png
     ├── adb_root_shell_id.png
-    ├── frida-server_push_chmod.png
-    ├── frida_ps-Uai.png
-    ├── Burp_proxy_listener.png
+    ├── androgoat_install.png
+    ├── androgoat_interface.png
+    ├── androgoat_launch_interface.png
+    ├── androgoat_okhttp3_after_objection.png
+    ├── androgoat_package.png
+    ├── android_cpu_architecture.png
     ├── android_proxy_adb_configured.png
+    ├── Burp_CA-download.png
     ├── Burp_CA_installed.png
-    ├── objection_spawn_sslpinning_disable.png
+    ├── burp_https-history_browser.png
+    ├── Burp_proxy_listener.png
+    ├── burp_scoobyspamprotection.png
+    ├── converting_Burp-CA_to_Android-system-format.png
+    ├── exploration_commands.png
+    ├── frida-server_launch.png
+    ├── frida-server_push_chmod.png
+    ├── frida_objection_pip-versions.png
+    ├── frida_ps-Uai.png
+    ├── http_burp.png
+    ├── lancement_frida-server.png
+    ├── objection_help_sslpinning.png
     ├── objection_jobs_list_sslpinning.png
-    └── androgoat_okhttp3_after_objection.png
+    ├── objection_search.png
+    ├── objection_spawn_sslpinning_disable.png
+    └── python_pip_adb-versions.png
 ```
 
-Les fichiers binaires comme `frida-server`, `AndroGoat.apk` et les certificats Burp ne sont pas inclus dans le dépôt GitHub.
+Les fichiers binaires et temporaires ne sont pas inclus dans le dépôt GitHub :
+
+```text
+frida-server
+frida-server-17.10.1-android-x86_64.xz
+AndroGoat.apk
+cacert.der
+cacert.pem
+9a5ba575.0
+```
 
 ---
 
@@ -122,11 +149,11 @@ pip --version
 adb version
 ```
 
-Résultat obtenu :
-
 <p align="center">
-  <img src="screenshots/python_pip_adb-versions.png" width="700"/>
+  <img src="screenshots/python_pip_adb-versions.png" width="750"/>
 </p>
+
+Cette étape confirme que Python, pip et ADB sont disponibles sur la machine Windows.
 
 ---
 
@@ -146,13 +173,11 @@ frida-ps --version
 python -m pip show objection
 ```
 
-Résultat obtenu :
-
 <p align="center">
-  <img src="screenshots/frida_objection_pip-versions.png" width="700"/>
+  <img src="screenshots/frida_objection_pip-versions.png" width="750"/>
 </p>
 
-Remarque : la commande suivante n’était pas disponible dans cette installation :
+La commande suivante n’était pas disponible dans cette installation :
 
 ```powershell
 objection --version
@@ -174,7 +199,11 @@ L’émulateur a été détecté avec ADB :
 adb devices
 ```
 
-Puis l’architecture CPU Android a été identifiée :
+<p align="center">
+  <img src="screenshots/adb_devices.png" width="700"/>
+</p>
+
+L’architecture CPU Android a ensuite été identifiée :
 
 ```powershell
 adb shell getprop ro.product.cpu.abi
@@ -187,12 +216,10 @@ x86_64
 ```
 
 <p align="center">
-  <img src="screenshots/adb_devices.png" width="650"/>
-  <br/>
-  <img src="screenshots/android_cpu_architecture.png" width="650"/>
+  <img src="screenshots/android_cpu_architecture.png" width="700"/>
 </p>
 
-L’architecture `x86_64` impose l’utilisation du binaire suivant :
+L’architecture `x86_64` impose l’utilisation du binaire Frida suivant :
 
 ```text
 frida-server-17.10.1-android-x86_64
@@ -200,22 +227,26 @@ frida-server-17.10.1-android-x86_64
 
 ---
 
-## 4️⃣ Préparation et lancement de Frida Server
+## 4️⃣ Préparation de l’émulateur rooté
 
-L’émulateur a d’abord été lancé en mode root :
+L’émulateur a été lancé en mode root :
 
 ```powershell
 adb root
 adb shell id
 ```
 
-Résultat :
-
 <p align="center">
-  <img src="screenshots/adb_root_shell_id.png" width="700"/>
+  <img src="screenshots/adb_root_shell_id.png" width="750"/>
 </p>
 
-Le serveur Frida a ensuite été copié dans `/data/local/tmp/`, puis rendu exécutable :
+Le résultat confirme que l’émulateur fonctionne avec les privilèges root.
+
+---
+
+## 5️⃣ Installation et lancement de Frida Server
+
+Le serveur Frida a été transféré dans `/data/local/tmp/`, puis rendu exécutable :
 
 ```powershell
 adb push .\frida-server /data/local/tmp/frida-server
@@ -224,17 +255,23 @@ adb shell ls -l /data/local/tmp/frida-server
 ```
 
 <p align="center">
-  <img src="screenshots/frida-server_push_chmod.png" width="700"/>
+  <img src="screenshots/frida-server_push_chmod.png" width="750"/>
 </p>
 
-Lancement de Frida Server :
+Frida Server a ensuite été lancé sur l’émulateur :
 
 ```powershell
 adb shell "/data/local/tmp/frida-server -l 0.0.0.0"
 ```
 
 <p align="center">
-  <img src="screenshots/frida-server_launch.png" width="700"/>
+  <img src="screenshots/frida-server_launch.png" width="750"/>
+</p>
+
+Une seconde capture montre également le lancement du serveur Frida :
+
+<p align="center">
+  <img src="screenshots/lancement_frida-server.png" width="750"/>
 </p>
 
 Dans une deuxième fenêtre PowerShell, les ports Frida ont été redirigés :
@@ -246,23 +283,23 @@ frida-ps -Uai
 ```
 
 <p align="center">
-  <img src="screenshots/frida_ps-Uai.png" width="700"/>
+  <img src="screenshots/frida_ps-Uai.png" width="750"/>
 </p>
 
 Cette étape confirme que Frida communique correctement avec l’émulateur Android.
 
 ---
 
-## 5️⃣ Configuration de Burp Suite
+## 6️⃣ Configuration de Burp Suite
 
-Burp Suite a été configuré avec un listener sur le port `8080`.
+Burp Suite a été configuré avec un proxy listener sur le port `8080`.
 
 <p align="center">
-  <img src="screenshots/Burp_proxy_listener.png" width="700"/>
+  <img src="screenshots/Burp_proxy_listener.png" width="750"/>
 </p>
 
-Sur Android Emulator, l’adresse `10.0.2.2` permet de joindre la machine hôte.  
-Le proxy Android a donc été configuré ainsi :
+Sur Android Emulator, l’adresse `10.0.2.2` permet d’accéder à la machine hôte.  
+Le proxy Android a donc été configuré avec ADB :
 
 ```powershell
 adb shell settings put global http_proxy 10.0.2.2:8080
@@ -276,12 +313,12 @@ Résultat attendu :
 ```
 
 <p align="center">
-  <img src="screenshots/android_proxy_adb_configured.png" width="700"/>
+  <img src="screenshots/android_proxy_adb_configured.png" width="750"/>
 </p>
 
 ---
 
-## 6️⃣ Accès à la page Burp depuis Android
+## 7️⃣ Vérification de l’accès à Burp depuis Android
 
 Depuis Chrome Android, l’URL suivante a été ouverte :
 
@@ -290,15 +327,15 @@ http://burp
 ```
 
 <p align="center">
-  <img src="screenshots/http_burp.png" width="350"/>
-  <img src="screenshots/Burp_CA-download.png" width="350"/>
+  <img src="screenshots/http_burp.png" width="360"/>
+  <img src="screenshots/Burp_CA-download.png" width="360"/>
 </p>
 
 Cette étape confirme que l’émulateur utilise bien Burp Suite comme proxy.
 
 ---
 
-## 7️⃣ Problème rencontré : installation classique de la CA Burp
+## 8️⃣ Problème rencontré : installation classique de la CA Burp
 
 L’installation classique du certificat Burp via l’interface Android a échoué avec le message suivant :
 
@@ -306,15 +343,11 @@ L’installation classique du certificat Burp via l’interface Android a échou
 Couldn't install because the certificate file couldn't be read.
 ```
 
-<p align="center">
-  <img src="screenshots/Burp_CA_installed.png" width="350"/>
-</p>
-
 Cette erreur a été contournée en installant la CA Burp directement dans le magasin système Android.
 
 ---
 
-## 8️⃣ Conversion de la CA Burp au format Android
+## 9️⃣ Conversion de la CA Burp au format Android
 
 Le certificat Burp téléchargé a été récupéré depuis l’émulateur :
 
@@ -322,13 +355,13 @@ Le certificat Burp téléchargé a été récupéré depuis l’émulateur :
 adb pull /sdcard/Download/cacert.der .\cacert.der
 ```
 
-Conversion du certificat DER en PEM :
+Le certificat a ensuite été converti du format DER vers le format PEM :
 
 ```powershell
 openssl x509 -inform DER -in cacert.der -out cacert.pem
 ```
 
-Récupération du hash attendu par Android :
+Le hash attendu par Android a été généré avec OpenSSL :
 
 ```powershell
 openssl x509 -inform PEM -subject_hash_old -in cacert.pem -noout
@@ -347,16 +380,16 @@ Le certificat final a donc été nommé :
 ```
 
 <p align="center">
-  <img src="screenshots/converting_Burp-CA_to_Android-system-format.png" width="700"/>
+  <img src="screenshots/converting_Burp-CA_to_Android-system-format.png" width="750"/>
 </p>
 
 ---
 
-## 9️⃣ Installation de la CA dans le magasin système Android
+## 🔟 Installation de la CA dans le magasin système Android
 
 La première tentative de copie dans `/system/etc/security/cacerts/` a échoué car la partition système était montée en lecture seule.
 
-Pour résoudre cela, l’émulateur a été relancé en mode système modifiable, puis la commande `adb remount` a réussi.
+Pour corriger cela, l’émulateur a été relancé avec un système modifiable, puis la commande `adb remount` a réussi.
 
 ```powershell
 adb root
@@ -367,7 +400,7 @@ adb root
 adb remount
 ```
 
-Ensuite, le certificat a été copié dans le magasin système Android :
+Le certificat a ensuite été copié dans le magasin système Android :
 
 ```powershell
 adb push .\9a5ba575.0 /system/etc/security/cacerts/
@@ -382,10 +415,10 @@ Résultat obtenu :
 ```
 
 <p align="center">
-  <img src="screenshots/Burp_CA_installed.png" width="700"/>
+  <img src="screenshots/Burp_CA_installed.png" width="750"/>
 </p>
 
-Après redémarrage, le proxy a été remis en place :
+Après redémarrage de l’émulateur, le proxy Android a été remis en place :
 
 ```powershell
 adb shell settings put global http_proxy 10.0.2.2:8080
@@ -394,75 +427,93 @@ adb shell settings get global http_proxy
 
 ---
 
-## 🔟 Validation HTTPS avec navigateur
+## 1️⃣1️⃣ Validation HTTPS avec Chrome Android
 
-Avant de tester l’application cible, une requête HTTPS simple a été testée depuis Chrome Android.
+Avant de tester l’application cible, une requête HTTPS simple a été générée depuis Chrome Android :
 
 ```powershell
 adb shell am start -a android.intent.action.VIEW -d "https://example.com"
 ```
 
-Dans Burp Suite, le trafic HTTPS est visible dans l’onglet `HTTP history`.
+Dans Burp Suite, le trafic HTTPS apparaît dans l’onglet `HTTP history`.
 
 <p align="center">
   <img src="screenshots/burp_https-history_browser.png" width="750"/>
 </p>
 
-Cette étape valide :
+Cette étape valide les points suivants :
 
 ```text
 [✓] Proxy Android configuré
-[✓] Burp reçoit le trafic
+[✓] Burp reçoit le trafic de l’émulateur
 [✓] CA Burp reconnue par Android
 [✓] Interception HTTPS fonctionnelle
 ```
 
+Une autre capture montre également du trafic HTTPS de fond provenant de l’émulateur :
+
+<p align="center">
+  <img src="screenshots/burp_scoobyspamprotection.png" width="750"/>
+</p>
+
+Cette capture sert uniquement de preuve complémentaire que Burp reçoit bien du trafic HTTPS depuis Android.
+
 ---
 
-## 1️⃣1️⃣ Installation et lancement d’AndroGoat
+## 1️⃣2️⃣ Installation d’AndroGoat
 
 L’application cible utilisée est **AndroGoat**, une application volontairement vulnérable pour l’apprentissage de la sécurité Android.
 
-Installation :
+Installation de l’APK :
 
 ```powershell
 adb install .\AndroGoat.apk
 ```
 
 <p align="center">
-  <img src="screenshots/androgoat_install.png" width="700"/>
+  <img src="screenshots/androgoat_install.png" width="750"/>
 </p>
 
-Identification du package :
+Identification du package de l’application :
 
 ```powershell
 adb shell pm list packages -3
 ```
 
-Package utilisé :
+Package obtenu :
 
 ```text
 owasp.sat.agoat
 ```
 
 <p align="center">
-  <img src="screenshots/androgoat_package.png" width="700"/>
+  <img src="screenshots/androgoat_package.png" width="750"/>
 </p>
 
-Lancement de l’application :
+---
+
+## 1️⃣3️⃣ Lancement d’AndroGoat
+
+L’application a été lancée avec la commande `monkey` :
 
 ```powershell
 adb shell monkey -p owasp.sat.agoat 1
 ```
 
 <p align="center">
-  <img src="screenshots/androgoat_interface.png" width="350"/>
-  <img src="screenshots/androgoat_launch_interface.png" width="350"/>
+  <img src="screenshots/adb_monkey.png" width="750"/>
+</p>
+
+Interface principale d’AndroGoat :
+
+<p align="center">
+  <img src="screenshots/androgoat_interface.png" width="360"/>
+  <img src="screenshots/androgoat_launch_interface.png" width="360"/>
 </p>
 
 ---
 
-## 1️⃣2️⃣ Désactivation du SSL Pinning avec Objection
+## 1️⃣4️⃣ Désactivation du SSL Pinning avec Objection
 
 L’application a été lancée avec Objection en mode `spawn`, afin d’injecter l’agent dès le démarrage :
 
@@ -470,7 +521,7 @@ L’application a été lancée avec Objection en mode `spawn`, afin d’injecte
 objection -g owasp.sat.agoat explore --startup-command "android sslpinning disable"
 ```
 
-Résultat obtenu :
+Sortie obtenue :
 
 ```text
 (agent) Custom TrustManager ready, overriding SSLContext.init()
@@ -485,11 +536,17 @@ Résultat obtenu :
   <img src="screenshots/objection_spawn_sslpinning_disable.png" width="750"/>
 </p>
 
-Cette sortie confirme que plusieurs mécanismes liés à la validation TLS/SSL ont été hookés dynamiquement.
+Cette sortie confirme que plusieurs composants liés à la validation TLS/SSL ont été hookés dynamiquement, notamment :
+
+```text
+SSLContext.init()
+okhttp3.CertificatePinner.check()
+TrustManagerImpl.verifyChain()
+```
 
 ---
 
-## 1️⃣3️⃣ Vérification du hook actif
+## 1️⃣5️⃣ Vérification du hook actif
 
 Dans la console Objection, la commande suivante a été exécutée :
 
@@ -513,7 +570,7 @@ Cela confirme que le hook `android-sslpinning-disable` est actif pendant l’ex�
 
 ---
 
-## 1️⃣4️⃣ Exercice AndroGoat utilisé
+## 1️⃣6️⃣ Exercice AndroGoat utilisé
 
 Dans AndroGoat, l’exercice utilisé se trouve dans :
 
@@ -528,11 +585,11 @@ Certificate Pinning - OkHttp3
 ```
 
 <p align="center">
-  <img src="screenshots/androgoat_interface.png" width="350"/>
-  <img src="screenshots/androgoat_okhttp3_after_objection.png" width="350"/>
+  <img src="screenshots/androgoat_interface.png" width="360"/>
+  <img src="screenshots/androgoat_launch_interface.png" width="360"/>
 </p>
 
-Cette partie correspond directement aux hooks détectés par Objection :
+Le choix de l’exercice **Certificate Pinning - OkHttp3** est cohérent avec la sortie Objection, qui indique la présence de hooks sur :
 
 ```text
 okhttp3.CertificatePinner.check()
@@ -541,15 +598,21 @@ okhttp3.CertificatePinner.check$okhttp()
 
 ---
 
-## 1️⃣5️⃣ Validation finale dans Burp Suite
+## 1️⃣7️⃣ Validation finale dans Burp Suite
 
-Après exécution de `android sslpinning disable`, une requête HTTPS générée depuis l’exercice **Certificate Pinning - OkHttp3** d’AndroGoat est devenue visible dans Burp Suite.
+Après l’exécution de la commande :
+
+```text
+android sslpinning disable
+```
+
+une requête HTTPS générée depuis l’exercice **Certificate Pinning - OkHttp3** d’AndroGoat est devenue visible dans Burp Suite.
 
 <p align="center">
   <img src="screenshots/androgoat_okhttp3_after_objection.png" width="750"/>
 </p>
 
-La requête observée dans Burp :
+La requête observée dans Burp Suite présente les éléments suivants :
 
 ```text
 Host: https://wasp.org
@@ -574,7 +637,7 @@ help android sslpinning
   <img src="screenshots/objection_help_sslpinning.png" width="750"/>
 </p>
 
-Des recherches de classes ont aussi été testées :
+Des commandes d’exploration ont également été testées :
 
 ```text
 android hooking search classes okhttp
@@ -583,13 +646,22 @@ android hooking search classes trust
 android hooking search classes CertificatePinner
 android hooking search classes TrustManagerImpl
 android hooking search classes SSLContext
+android hooking search classes agoat
+android hooking search classes owasp
 ```
+
+<p align="center">
+  <img src="screenshots/exploration_commands.png" width="750"/>
+</p>
+
+Une autre capture regroupe les recherches effectuées :
 
 <p align="center">
   <img src="screenshots/objection_search.png" width="750"/>
 </p>
 
-Ces commandes n’ont pas retourné de résultat exploitable dans cette session, mais cela ne bloque pas la validation du lab, car Objection avait déjà confirmé l’installation des hooks SSL pinning au moment de l’injection.
+Ces commandes n’ont pas retourné de résultat exploitable dans cette session.  
+Cependant, cela ne bloque pas la validation du lab, car Objection avait déjà confirmé l’installation des hooks SSL pinning au moment de l’injection, et la commande `jobs list` confirme que le hook est actif.
 
 ---
 
@@ -615,7 +687,7 @@ python -m pip show objection
 
 L’émulateur est devenu noir et peu réactif à certains moments.
 
-Commandes utilisées pour le réveiller :
+Commandes utilisées pour le réveiller et éviter la mise en veille :
 
 ```powershell
 adb shell input keyevent 224
@@ -635,27 +707,27 @@ Message rencontré :
 Couldn't install because the certificate file couldn't be read.
 ```
 
-Solution :
+Solution appliquée :
 
 ```text
-Installation de la CA Burp dans le magasin système Android.
+Conversion du certificat Burp avec OpenSSL, puis installation dans le magasin système Android.
 ```
 
 ---
 
 ### Problème 4 — Partition système en lecture seule
 
-Erreur rencontrée :
+Erreur rencontrée lors du remount :
 
 ```text
 remount of the / superblock failed: Permission denied
 remount failed
 ```
 
-Solution :
+Solution appliquée :
 
 ```text
-Relancer l’émulateur avec un système modifiable, puis refaire adb remount.
+Relancement de l’émulateur avec un système modifiable, puis exécution de adb remount.
 ```
 
 ---
@@ -668,13 +740,18 @@ Relancer l’émulateur avec un système modifiable, puis refaire adb remount.
 | Architecture Android identifiée | ✅ `x86_64` |
 | Frida PC installé | ✅ `17.10.1` |
 | Objection installé | ✅ `1.12.5` |
+| Frida Server transféré sur Android | ✅ Réussi |
 | Frida Server lancé | ✅ Réussi |
 | Burp configuré comme proxy | ✅ Réussi |
+| Proxy Android configuré | ✅ `10.0.2.2:8080` |
+| CA Burp convertie au format Android | ✅ Réussi |
 | CA Burp installée dans Android | ✅ Réussi |
 | HTTPS navigateur visible dans Burp | ✅ Réussi |
 | AndroGoat installé | ✅ Réussi |
+| Package cible identifié | ✅ `owasp.sat.agoat` |
 | Objection injecté dans AndroGoat | ✅ Réussi |
 | SSL Pinning désactivé | ✅ Réussi |
+| Hook Objection actif | ✅ Réussi |
 | Requête HTTPS AndroGoat visible dans Burp | ✅ Réussi |
 
 ---
@@ -687,14 +764,23 @@ Relancer l’émulateur avec un système modifiable, puis refaire adb remount.
 | Versions Frida / Objection | `screenshots/frida_objection_pip-versions.png` |
 | ADB devices | `screenshots/adb_devices.png` |
 | Architecture Android | `screenshots/android_cpu_architecture.png` |
-| Frida Server | `screenshots/frida-server_push_chmod.png` |
-| Frida process list | `screenshots/frida_ps-Uai.png` |
-| Proxy Burp | `screenshots/Burp_proxy_listener.png` |
+| Root Android | `screenshots/adb_root_shell_id.png` |
+| Push + chmod Frida Server | `screenshots/frida-server_push_chmod.png` |
+| Lancement Frida Server | `screenshots/frida-server_launch.png` |
+| Processus Frida | `screenshots/frida_ps-Uai.png` |
+| Listener Burp | `screenshots/Burp_proxy_listener.png` |
 | Proxy Android | `screenshots/android_proxy_adb_configured.png` |
-| CA Burp système | `screenshots/Burp_CA_installed.png` |
+| Page Burp Android | `screenshots/http_burp.png` |
+| Téléchargement CA Burp | `screenshots/Burp_CA-download.png` |
+| Conversion CA Burp | `screenshots/converting_Burp-CA_to_Android-system-format.png` |
+| Installation CA système | `screenshots/Burp_CA_installed.png` |
+| HTTPS navigateur dans Burp | `screenshots/burp_https-history_browser.png` |
+| Installation AndroGoat | `screenshots/androgoat_install.png` |
+| Package AndroGoat | `screenshots/androgoat_package.png` |
+| Interface AndroGoat | `screenshots/androgoat_interface.png` |
 | Objection SSL Pinning disable | `screenshots/objection_spawn_sslpinning_disable.png` |
-| Hook actif | `screenshots/objection_jobs_list_sslpinning.png` |
-| Burp HTTPS AndroGoat | `screenshots/androgoat_okhttp3_after_objection.png` |
+| Hook actif Objection | `screenshots/objection_jobs_list_sslpinning.png` |
+| Validation finale Burp | `screenshots/androgoat_okhttp3_after_objection.png` |
 
 ---
 
@@ -724,7 +810,7 @@ Ce lab a permis de mettre en place une chaîne complète d’inspection HTTPS su
 Burp Suite + Proxy Android + CA système + Frida Server + Objection + AndroGoat
 ```
 
-La désactivation dynamique du SSL Pinning a été validée grâce à Objection, qui a installé des hooks sur plusieurs composants liés à la validation TLS, notamment :
+La désactivation dynamique du SSL Pinning a été validée grâce à Objection, qui a installé des hooks sur plusieurs composants liés à la validation TLS :
 
 ```text
 SSLContext.init()
@@ -732,7 +818,9 @@ okhttp3.CertificatePinner.check()
 TrustManagerImpl.verifyChain()
 ```
 
-La requête HTTPS générée par l’exercice **Certificate Pinning - OkHttp3** d’AndroGoat a ensuite été capturée avec succès dans Burp Suite avec un statut `200`.
+La commande `jobs list` a confirmé que le hook `android-sslpinning-disable` était actif dans le processus de l’application cible.
+
+Enfin, la requête HTTPS générée par l’exercice **Certificate Pinning - OkHttp3** d’AndroGoat a été capturée avec succès dans Burp Suite avec un statut `200`.
 
 Le lab est donc validé.
 
@@ -743,3 +831,5 @@ Le lab est donc validé.
 **Malak BELKHO**  
 Cycle Ingénieur — Cyberdéfense & Systèmes de Télécommunications Embarqués  
 ENSA Marrakech
+
+---
