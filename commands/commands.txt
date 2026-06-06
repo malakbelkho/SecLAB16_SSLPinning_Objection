@@ -1,0 +1,41 @@
+python --version
+pip --version
+adb version
+
+python -m pip install --upgrade frida frida-tools objection
+frida --version
+frida-ps --version
+python -m pip show objection
+
+adb devices
+adb shell getprop ro.product.cpu.abi
+
+adb root
+adb push .\frida-server /data/local/tmp/frida-server
+adb shell chmod 755 /data/local/tmp/frida-server
+adb shell "/data/local/tmp/frida-server -l 0.0.0.0"
+
+adb forward tcp:27042 tcp:27042
+adb forward tcp:27043 tcp:27043
+frida-ps -Uai
+
+adb shell settings put global http_proxy 10.0.2.2:8080
+adb shell settings get global http_proxy
+
+openssl x509 -inform DER -in cacert.der -out cacert.pem
+openssl x509 -inform PEM -subject_hash_old -in cacert.pem -noout
+
+adb remount
+adb push .\9a5ba575.0 /system/etc/security/cacerts/
+adb shell chmod 644 /system/etc/security/cacerts/9a5ba575.0
+
+adb install .\AndroGoat.apk
+adb shell monkey -p owasp.sat.agoat 1
+
+objection -g owasp.sat.agoat explore --startup-command "android sslpinning disable"
+
+jobs list
+help android sslpinning
+android hooking search classes okhttp
+android hooking search classes pin
+android hooking search classes trust

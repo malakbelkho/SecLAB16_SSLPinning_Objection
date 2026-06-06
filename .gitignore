@@ -1,0 +1,15 @@
+﻿# Binaries / tools
+frida-server
+frida-server-*.xz
+*.apk
+
+# Burp certificates
+cacert.der
+cacert.pem
+*.0
+
+# System / temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log

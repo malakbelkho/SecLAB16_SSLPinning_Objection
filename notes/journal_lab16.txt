@@ -1,0 +1,14 @@
+LAB 16 - Inspection HTTPS Android avec Objection + Burp
+
+Nom :
+Date :
+Machine :
+Android utilisé :
+App testée :
+Package :
+Proxy :
+IP PC :
+Port :
+Méthode utilisée : spawn / attach
+Problèmes rencontrés :
+Solution appliquée :
